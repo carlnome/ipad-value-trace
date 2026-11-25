@@ -1,0 +1,56 @@
+name: iPadValueTrace
+options:
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    CLANG_ENABLE_OBJC_ARC: YES
+    GENERATE_INFOPLIST_FILE: YES
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "2"
+targets:
+  ValueTraceKit:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/ValueTraceKit
+        headerVisibility: public
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.valuetrace.kit
+        DEFINES_MODULE: YES
+        MACH_O_TYPE: mh_dylib
+  ValueTraceExample:
+    type: application
+    platform: iOS
+    sources:
+      - path: Examples/iPad
+        excludes: [Info.plist]
+    dependencies:
+      - target: ValueTraceKit
+        link: true
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.valuetrace.example
+        INFOPLIST_FILE: Examples/iPad/Info.plist
+        MERGED_BINARY_TYPE: automatic
+        ENABLE_DEBUG_DYLIB: NO
+  ValueTraceSmokeTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests/ValueTraceSmokeTests]
+    dependencies:
+      - target: ValueTraceExample
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.valuetrace.smoke-tests
+        TEST_TARGET_NAME: ValueTraceExample
+schemes:
+  ValueTraceExample:
+    build:
+      targets:
+        ValueTraceExample: all
+    test:
+      targets: [ValueTraceSmokeTests]
