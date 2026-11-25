@@ -44,7 +44,7 @@ jobs:
           if not options:
               sys.exit("No available iPad simulator with an iOS 26 runtime")
           version, device = max(options, key=lambda option: option[0])
-          print(f"Using {device['name']} (iOS {chr(46).join(map(str, version))})", file=sys.stderr)
+          print("Using {} (iOS {})".format(device["name"], ".".join(map(str, version))), file=sys.stderr)
           print(device["udid"])
           ')"
           xcodebuild -project iPadValueTrace.xcodeproj -scheme ValueTraceExample \
