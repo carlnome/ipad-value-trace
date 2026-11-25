@@ -47,6 +47,11 @@ jobs:
           print("Using {} (iOS {})".format(device["name"], ".".join(map(str, version))), file=sys.stderr)
           print(device["udid"])
           ')"
+          xcrun simctl bootstatus "$device_id" -b
+          app="$PWD/.build/Debug/Build/Products/Debug-iphonesimulator/ValueTraceExample.app"
+          xcrun simctl install "$device_id" "$app"
+          xcrun simctl launch "$device_id" org.valuetrace.example
+          xcrun simctl terminate "$device_id" org.valuetrace.example
           xcodebuild -project iPadValueTrace.xcodeproj -scheme ValueTraceExample \
             -configuration Debug -destination "platform=iOS Simulator,id=$device_id" \
             -derivedDataPath "$PWD/.build/smoke" -parallel-testing-enabled NO \
