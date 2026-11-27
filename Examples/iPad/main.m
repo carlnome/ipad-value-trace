@@ -1,6 +1,9 @@
 #import <UIKit/UIKit.h>
 #import <ValueTraceKit/ValueTraceKit.h>
 #import <math.h>
+#if VT_PUBLIC_BLOCK_DEMO
+#import "SyntheticCallback.h"
+#endif
 
 @interface ValueTraceExampleController : UIViewController
 @end
@@ -9,6 +12,14 @@
     NSArray<VTValueEvidence *> *_evidence;
     UILabel *_sourceLabel;
     UILabel *_ruleLabel;
+#if VT_PUBLIC_BLOCK_DEMO
+    UILabel *_callbackResult;
+    UILabel *_callbackEvidence;
+    NSMutableArray<VTValueEvidence *> *_callbackEvents;
+    NSInteger _callbackInput;
+    NSUInteger _callbackCalls;
+    BOOL _captureEnabled;
+#endif
 }
 
 - (void)viewDidLoad {
@@ -61,7 +72,56 @@
     _ruleLabel.numberOfLines = 0;
     [stack addArrangedSubview:_sourceLabel];
     [stack addArrangedSubview:_ruleLabel];
+#if VT_PUBLIC_BLOCK_DEMO
+    _callbackInput = 6;
+    _callbackEvents = [NSMutableArray new];
+    UIButton *toggle = [UIButton buttonWithType:UIButtonTypeSystem];
+    toggle.accessibilityIdentifier = @"synthetic.capture";
+    [toggle setTitle:@"Enable capture" forState:UIControlStateNormal];
+    [toggle addTarget:self action:@selector(toggleCapture:) forControlEvents:UIControlEventTouchUpInside];
+    [toggle.heightAnchor constraintGreaterThanOrEqualToConstant:44].active = YES;
+    [stack addArrangedSubview:toggle];
+
+    UIButton *run = [UIButton buttonWithType:UIButtonTypeSystem];
+    run.accessibilityIdentifier = @"synthetic.run";
+    [run setTitle:@"Run callback" forState:UIControlStateNormal];
+    [run addTarget:self action:@selector(runCallback) forControlEvents:UIControlEventTouchUpInside];
+    [run.heightAnchor constraintGreaterThanOrEqualToConstant:44].active = YES;
+    [stack addArrangedSubview:run];
+
+    _callbackResult = [UILabel new];
+    _callbackResult.text = @"calls=0";
+    _callbackResult.accessibilityIdentifier = @"synthetic.result";
+    _callbackEvidence = [UILabel new];
+    _callbackEvidence.text = @"events=0";
+    _callbackEvidence.accessibilityIdentifier = @"synthetic.evidence";
+    [stack addArrangedSubview:_callbackResult];
+    [stack addArrangedSubview:_callbackEvidence];
+#endif
 }
+
+#if VT_PUBLIC_BLOCK_DEMO
+- (void)toggleCapture:(UIButton *)sender {
+    _captureEnabled = !_captureEnabled;
+    [sender setTitle:_captureEnabled ? @"Disable capture" : @"Enable capture" forState:UIControlStateNormal];
+}
+
+- (void)runCallback {
+    NSInteger input = _callbackInput++;
+    NSMutableArray<VTValueEvidence *> *events = _callbackEvents;
+    VTDemoSyntheticCapture capture = nil;
+    if (_captureEnabled) capture = ^(NSInteger capturedValue, BOOL fromCache) {
+            NSString *value = [NSString stringWithFormat:@"input=%ld cache=%@", (long)capturedValue, fromCache ? @"YES" : @"NO"];
+            [events addObject:[[VTValueEvidence alloc] initWithFieldID:@"synthetic.callback"
+               displayValue:value source:@"synthetic.callback.entry" rule:@"input*2 + cache"]];
+    };
+    NSInteger result = VTDemoRunSyntheticCallback(input, input == 8, &_callbackCalls, capture);
+    _callbackResult.text = [NSString stringWithFormat:@"result=%ld calls=%lu",
+                            (long)result, (unsigned long)_callbackCalls];
+    _callbackEvidence.text = events.count == 0 ? @"events=0" :
+        [NSString stringWithFormat:@"events=%lu %@", (unsigned long)events.count, events.lastObject.displayValue];
+}
+#endif
 
 - (void)showEvidence:(UIButton *)sender {
     VTValueEvidence *record = _evidence[(NSUInteger)sender.tag];

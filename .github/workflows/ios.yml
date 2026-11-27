@@ -1,4 +1,4 @@
-name: iPad compile and link verification
+name: Public synthetic Block on iPad
 
 on:
   push:
@@ -26,10 +26,11 @@ jobs:
           if ! command -v xcodegen >/dev/null; then
             brew install xcodegen
           fi
+      - name: Generate synthetic callback source
+        run: python3 Scripts/prepare_synthetic_callback.py
       - name: Compile and verify linkage
         run: bash Scripts/ci.sh "${{ matrix.configuration }}"
       - name: Run Demo UI smoke test on iPad
-        if: matrix.configuration == 'Debug'
         shell: bash
         run: |
           set -euo pipefail
@@ -48,11 +49,20 @@ jobs:
           print(device["udid"])
           ')"
           xcrun simctl bootstatus "$device_id" -b
-          app="$PWD/.build/Debug/Build/Products/Debug-iphonesimulator/ValueTraceExample.app"
+          app="$PWD/.build/${{ matrix.configuration }}/Build/Products/${{ matrix.configuration }}-iphonesimulator/ValueTraceExample.app"
           xcrun simctl install "$device_id" "$app"
           xcrun simctl launch "$device_id" org.valuetrace.example
           xcrun simctl terminate "$device_id" org.valuetrace.example
           xcodebuild -project iPadValueTrace.xcodeproj -scheme ValueTraceExample \
-            -configuration Debug -destination "platform=iOS Simulator,id=$device_id" \
+            -configuration "${{ matrix.configuration }}" -destination "platform=iOS Simulator,id=$device_id" \
             -derivedDataPath "$PWD/.build/smoke" -parallel-testing-enabled NO \
-            -only-testing:ValueTraceSmokeTests/ValueTraceSmokeTests/testEqualDisplayValuesKeepTheirOwnSourceAndRule test
+            -resultBundlePath "$PWD/.build/PublicBlock.xcresult" \
+            test
+      - name: Archive simulator test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-ipad-block-${{ matrix.configuration }}
+          path: .build/PublicBlock.xcresult
+          include-hidden-files: true
+          if-no-files-found: warn

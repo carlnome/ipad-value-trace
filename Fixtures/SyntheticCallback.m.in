@@ -1,0 +1,14 @@
+#import "SyntheticCallback.h"
+#if VT_PUBLIC_BLOCK_DEMO
+NSInteger VTDemoRunSyntheticCallback(NSInteger input, BOOL fromCache, NSUInteger *calls, VTDemoSyntheticCapture capture) {
+    __block NSUInteger localCalls = 0;
+    NSInteger (^compute)(NSInteger, BOOL) = ^NSInteger(NSInteger value, BOOL cached) {
+        /* SYNTHETIC_PROBE_SITE */
+        localCalls++;
+        return value * 2 + (cached ? 1 : 0);
+    };
+    NSInteger result = compute(input, fromCache);
+    *calls += localCalls;
+    return result;
+}
+#endif

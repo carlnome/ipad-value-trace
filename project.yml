@@ -27,6 +27,7 @@ targets:
     sources:
       - path: Examples/iPad
         excludes: [Info.plist]
+      - path: Generated/SyntheticCallback.m
     dependencies:
       - target: ValueTraceKit
         link: true
@@ -37,6 +38,10 @@ targets:
         INFOPLIST_FILE: Examples/iPad/Info.plist
         MERGED_BINARY_TYPE: automatic
         ENABLE_DEBUG_DYLIB: NO
+        HEADER_SEARCH_PATHS: $(SRCROOT)/Examples/iPad
+      configs:
+        Debug:
+          GCC_PREPROCESSOR_DEFINITIONS: $(inherited) VT_PUBLIC_BLOCK_DEMO=1
   ValueTraceSmokeTests:
     type: bundle.ui-testing
     platform: iOS
@@ -47,6 +52,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.valuetrace.smoke-tests
         TEST_TARGET_NAME: ValueTraceExample
+      configs:
+        Debug:
+          GCC_PREPROCESSOR_DEFINITIONS: $(inherited) VT_PUBLIC_BLOCK_DEMO=1
 schemes:
   ValueTraceExample:
     build:
